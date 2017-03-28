@@ -36,6 +36,7 @@
 #include "dev/watchdog.h"
 #include "button-sensor.h"
 #include "batmon-sensor.h"
+#include "lib/sensors.h"
 #include "board-peripherals.h"
 #include "net/netstack.h"
 #include "net/ipv6/uip-ds6-nbr.h"
@@ -106,16 +107,25 @@ readings_get_handler(void *request, void *response, uint8_t *buffer,
                      uint16_t preferred_size, int32_t *offset)
 {
   unsigned int accept = -1;
+  //int's for sensor values
+  //i need temp,humidity,air pressure,light,battery volt
   int temp;
   int voltage;
+  int bmpres; //air pressure
+  int light; 
+  int hum; //humidity
+  
 
   if(request != NULL) {
     REST.get_header_accept(request, &accept);
   }
 
-  temp = batmon_sensor.value(BATMON_SENSOR_TYPE_TEMP);
-
+  //take voltage of battery from batmon_sensor
   voltage = batmon_sensor.value(BATMON_SENSOR_TYPE_VOLT);
+  
+  //take air temperature and pressure from bmp sensor
+  temp = 
+  bmpres =
 
   if(accept == -1 || accept == REST.type.APPLICATION_JSON) {
     REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
