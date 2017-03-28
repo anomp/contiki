@@ -111,9 +111,9 @@ readings_get_handler(void *request, void *response, uint8_t *buffer,
   //i need temp,humidity,air pressure,light,battery volt
   int temp;
   int voltage;
-  int bmpres; //air pressure
+  //int bmpres; //air pressure
   int light; 
-  int hum; //humidity
+  //int hum; //humidity
   
 
   if(request != NULL) {
@@ -124,15 +124,18 @@ readings_get_handler(void *request, void *response, uint8_t *buffer,
   voltage = batmon_sensor.value(BATMON_SENSOR_TYPE_VOLT);
   
   //take air temperature and pressure from bmp sensor
-  temp = 
-  bmpres =
+  //temp = 
+  //bmpres =
+  
+  //get light from light sensor
+  light= opt_3001_sensor.value(0);
 
   if(accept == -1 || accept == REST.type.APPLICATION_JSON) {
     REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
     snprintf((char *)buffer, REST_MAX_CHUNK_SIZE,
-             "{\"temp\":{\"v\":%d,\"u\":\"C\"},"
+             "{\"light\":{\"v\":%d.%02d,\"u\":\"lux\"},"
              "\"voltage\":{\"v\":%d,\"u\":\"mV\"}}",
-             temp, (voltage * 125) >> 5);
+             light / 100, light % 100, (voltage * 125) >> 5);
 
     REST.set_response_payload(response, buffer, strlen((char *)buffer));
   } else if(accept == REST.type.TEXT_PLAIN) {
@@ -364,6 +367,13 @@ PROCESS_THREAD(very_sleepy_demo_process, ev, data)
   switch_to_normal();
 
   etimer_set(&et_periodic, PERIODIC_INTERVAL);
+  
+  /*-------initialize sensors--------*/
+  //SENSORS_ACTIVATE(hdc_1000_sensor);
+  //SENSORS_ACTIVATE(tmp_007_sensor);
+  SENSORS_ACTIVATE(opt_3001_sensor);
+  //SENSORS_ACTIVATE(bmp_280_sensor);
+  /*----------------------------------*/
 
   while(1) {
 
