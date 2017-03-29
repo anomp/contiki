@@ -97,11 +97,45 @@ static struct etimer et_periodic;
 static process_event_t event_new_config;
 static uint8_t state;
 /*---------------------------------------------------------------------------*/
+#define ON 0
+#define OFF 1
+
+static uint8_t tempSensorSt=OFF;
+static uint8_t humSensorSt=OFF;
+static uint8_t lightSensorSt=OFF;
+
+static void tempSensorOn(void)
+{
+		SENSORS_ACTIVATE(tmp_007_sensor);
+		tempSensorSt=ON;
+}
+static void tempSensorOff(void)
+{
+		SENSORS_DEACTIVATE(tmp_007_sensor);
+		tempSensorSt=OFF;
+}
+static void humSensorOn(void)
+{
+		SENSORS_ACTIVATE(hdc_1000_sensor);
+		humSensorSt=ON;
+}
+static void humSensorOff(void)
+{
+		SENSORS_DEACTIVATE(hdc_1000_sensor);
+		humSensorSt=OFF;
+}
+static void lightSensorOn(void)
+{
+		SENSORS_ACTIVATE(opt_3001_sensor);
+		lightSensorSt=ON;
+}
+/*---------------------------------------------------------------------------*/
 const char *not_supported_msg = "Supported:text/plain,application/json";
 /*---------------------------------------------------------------------------*/
 PROCESS(very_sleepy_demo_process, "CC13xx/CC26xx very sleepy process");
 AUTOSTART_PROCESSES(&very_sleepy_demo_process);
 /*---------------------------------------------------------------------------*/
+
 static void
 readings_get_handler(void *request, void *response, uint8_t *buffer,
                      uint16_t preferred_size, int32_t *offset)
@@ -111,9 +145,9 @@ readings_get_handler(void *request, void *response, uint8_t *buffer,
   //i need temp,humidity,air pressure,light,battery volt
   int temp;
   int voltage;
-  //int bmpres; //air pressure
+  int bmpres; //air pressure
   int light; 
-  //int hum; //humidity
+  int hum; //humidity
   
 
   if(request != NULL) {
@@ -122,26 +156,52 @@ readings_get_handler(void *request, void *response, uint8_t *buffer,
 
   //take voltage of battery from batmon_sensor
   voltage = batmon_sensor.value(BATMON_SENSOR_TYPE_VOLT);
-  
-  //take air temperature and pressure from bmp sensor
-  //temp = 
-  //bmpres =
-  
+    
   //get light from light sensor
   light= opt_3001_sensor.value(0);
+  if(light == CC26XX_SENSOR_READING_ERROR) {
+    light=150;
+  }
+  
+  //get humidity
+  //SENSORS_ACTIVATE(hdc_1000_sensor);
+  hum = hdc_1000_sensor.value(HDC_1000_SENSOR_TYPE_HUMIDITY);
+  if(hum == CC26XX_SENSOR_READING_ERROR) {
+    hum=150;
+  }
+  
+  //get ambient temperature and deactivate sensor
+  if (tempSensorSt==OFF) 
+	{tempSensorOn();}
+	
+  temp = tmp_007_sensor.value(TMP_007_SENSOR_TYPE_ALL);
+  
+  temp = tmp_007_sensor.value(TMP_007_SENSOR_TYPE_AMBIENT);
+  //temp = 200;
+  if(temp == CC26XX_SENSOR_READING_ERROR) {
+    temp=1500;
+  }
+  //tempSensorOff();
+  
+  //get air pressure and deactivate sensor
+  bmpres = bmp_280_sensor.value(BMP_280_SENSOR_TYPE_PRESS);
+  SENSORS_DEACTIVATE(bmp_280_sensor);
 
   if(accept == -1 || accept == REST.type.APPLICATION_JSON) {
     REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
     snprintf((char *)buffer, REST_MAX_CHUNK_SIZE,
-             "{\"light\":{\"v\":%d.%02d,\"u\":\"lux\"},"
-             "\"voltage\":{\"v\":%d,\"u\":\"mV\"}}",
-             light / 100, light % 100, (voltage * 125) >> 5);
+             "{\"temp\":{\"v\":%d.%03d,\"u\":\"C\"},"
+             "\"humidity\":{\"v\":%d.%02d,\"u\":\"RH\"},"
+             //"\"pressure\":{\"v\":%d.%02d,\"u\":\"hPa\"},"
+             "\"light\":{\"v\":%d.%02d,\"u\":\"lux\"}}",
+             /*"\"voltage\":{\"v\":%d.%02d,\"u\":\"hPa\"}}",*/
+             temp / 1000, temp % 1000,hum / 100, hum % 100,light / 100, light % 100/*,bmpres / 100, bmpres % 100,light / 100, light % 100,(voltage * 125) >> 5*/);
 
     REST.set_response_payload(response, buffer, strlen((char *)buffer));
   } else if(accept == REST.type.TEXT_PLAIN) {
     REST.set_header_content_type(response, REST.type.TEXT_PLAIN);
     snprintf((char *)buffer, REST_MAX_CHUNK_SIZE, "Temp=%dC, Voltage=%dmV",
-             temp, (voltage * 125) >> 5);
+             150, (voltage * 125) >> 5);
 
     REST.set_response_payload(response, buffer, strlen((char *)buffer));
   } else {
@@ -335,6 +395,19 @@ switch_to_normal(void)
 }
 /*---------------------------------------------------------------------------*/
 static void
+init_sensor_readings(void)
+{
+  SENSORS_ACTIVATE(hdc_1000_sensor);
+  humSensorSt=ON;
+  SENSORS_ACTIVATE(tmp_007_sensor);
+  tempSensorSt=ON;
+  SENSORS_ACTIVATE(opt_3001_sensor);
+  lightSensorSt=ON;
+  SENSORS_ACTIVATE(bmp_280_sensor);
+}
+
+
+static void
 switch_to_very_sleepy(void)
 {
   state = STATE_VERY_SLEEPY;
@@ -368,12 +441,7 @@ PROCESS_THREAD(very_sleepy_demo_process, ev, data)
 
   etimer_set(&et_periodic, PERIODIC_INTERVAL);
   
-  /*-------initialize sensors--------*/
-  //SENSORS_ACTIVATE(hdc_1000_sensor);
-  //SENSORS_ACTIVATE(tmp_007_sensor);
-  SENSORS_ACTIVATE(opt_3001_sensor);
-  //SENSORS_ACTIVATE(bmp_280_sensor);
-  /*----------------------------------*/
+  init_sensor_readings();
 
   while(1) {
 
@@ -408,6 +476,7 @@ PROCESS_THREAD(very_sleepy_demo_process, ev, data)
        * send notifications to observers as required.
        */
       if(state == STATE_NOTIFY_OBSERVERS) {
+		//init_sensor_readings();
         REST.notify_subscribers(&readings_resource);
         state = STATE_NORMAL;
       }
@@ -422,6 +491,8 @@ PROCESS_THREAD(very_sleepy_demo_process, ev, data)
       } else if(state == STATE_VERY_SLEEPY) {
         if(stimer_expired(&st_interval)) {
           switch_to_normal();
+          init_sensor_readings();
+          
         }
       }
 
