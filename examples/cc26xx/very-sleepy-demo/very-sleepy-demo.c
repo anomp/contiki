@@ -101,6 +101,7 @@ static uint8_t state;
 #define OFF 1
 
 static uint8_t tempSensorSt=OFF;
+static uint8_t bmpSensorSt=OFF;
 static uint8_t humSensorSt=OFF;
 static uint8_t lightSensorSt=OFF;
 
@@ -113,6 +114,16 @@ static void tempSensorOff(void)
 {
 		SENSORS_DEACTIVATE(tmp_007_sensor);
 		tempSensorSt=OFF;
+}
+static void bmpSensorOn(void)
+{
+		SENSORS_ACTIVATE(bmp_280_sensor);
+		bmpSensorSt=ON;
+}
+static void bmpSensorOff(void)
+{
+		SENSORS_DEACTIVATE(bmp_280_sensor);
+		bmpSensorSt=OFF;
 }
 static void humSensorOn(void)
 {
@@ -184,18 +195,19 @@ readings_get_handler(void *request, void *response, uint8_t *buffer,
   //tempSensorOff();
   
   //get air pressure and deactivate sensor
+  if (bmpSensorSt==OFF) 
+	{bmpSensorOn();}
   bmpres = bmp_280_sensor.value(BMP_280_SENSOR_TYPE_PRESS);
-  SENSORS_DEACTIVATE(bmp_280_sensor);
+  if(bmpres == CC26XX_SENSOR_READING_ERROR) {
+    bmpres=1500;
+  }
+  //SENSORS_DEACTIVATE(bmp_280_sensor);
 
   if(accept == -1 || accept == REST.type.APPLICATION_JSON) {
     REST.set_header_content_type(response, REST.type.APPLICATION_JSON);
     snprintf((char *)buffer, REST_MAX_CHUNK_SIZE,
-             "{\"temp\":{\"v\":%d.%03d,\"u\":\"C\"},"
-             "\"humidity\":{\"v\":%d.%02d,\"u\":\"RH\"},"
-             //"\"pressure\":{\"v\":%d.%02d,\"u\":\"hPa\"},"
-             "\"light\":{\"v\":%d.%02d,\"u\":\"lux\"},"
-             "\"voltage\":{\"v\":%d,\"u\":\"mV\"}}",
-             temp / 1000, temp % 1000,hum / 100, hum % 100,light / 100, light % 100/*,bmpres / 100, bmpres % 100,light / 100, light % 100*/,(voltage * 125) >> 5);
+             "{\"v\":[%d.%03d,%d.%02d,%d.%02d,%d.%02d,%d]}",
+             temp / 1000, temp % 1000,hum / 100, hum % 100,bmpres / 100, bmpres % 100,light / 100, light % 100,(voltage * 125) >> 5);
 
     REST.set_response_payload(response, buffer, strlen((char *)buffer));
   } else if(accept == REST.type.TEXT_PLAIN) {
@@ -404,6 +416,7 @@ init_sensor_readings(void)
   SENSORS_ACTIVATE(opt_3001_sensor);
   lightSensorSt=ON;
   SENSORS_ACTIVATE(bmp_280_sensor);
+  bmpSensorSt=ON;
 }
 
 
