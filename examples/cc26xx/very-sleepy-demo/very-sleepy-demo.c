@@ -193,9 +193,9 @@ readings_get_handler(void *request, void *response, uint8_t *buffer,
              "{\"temp\":{\"v\":%d.%03d,\"u\":\"C\"},"
              "\"humidity\":{\"v\":%d.%02d,\"u\":\"RH\"},"
              //"\"pressure\":{\"v\":%d.%02d,\"u\":\"hPa\"},"
-             "\"light\":{\"v\":%d.%02d,\"u\":\"lux\"}}",
-             /*"\"voltage\":{\"v\":%d.%02d,\"u\":\"hPa\"}}",*/
-             temp / 1000, temp % 1000,hum / 100, hum % 100,light / 100, light % 100/*,bmpres / 100, bmpres % 100,light / 100, light % 100,(voltage * 125) >> 5*/);
+             "\"light\":{\"v\":%d.%02d,\"u\":\"lux\"},"
+             "\"voltage\":{\"v\":%d,\"u\":\"mV\"}}",
+             temp / 1000, temp % 1000,hum / 100, hum % 100,light / 100, light % 100/*,bmpres / 100, bmpres % 100,light / 100, light % 100*/,(voltage * 125) >> 5);
 
     REST.set_response_payload(response, buffer, strlen((char *)buffer));
   } else if(accept == REST.type.TEXT_PLAIN) {
