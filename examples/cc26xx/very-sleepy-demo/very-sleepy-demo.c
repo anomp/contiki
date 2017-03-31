@@ -176,6 +176,8 @@ readings_get_handler(void *request, void *response, uint8_t *buffer,
   
   //get humidity
   //SENSORS_ACTIVATE(hdc_1000_sensor);
+  if (humSensorSt==OFF) 
+	{humSensorOn();}
   hum = hdc_1000_sensor.value(HDC_1000_SENSOR_TYPE_HUMIDITY);
   if(hum == CC26XX_SENSOR_READING_ERROR) {
     hum=150;

@@ -39,7 +39,7 @@
 #define ROM_BOOTLOADER_ENABLE                 1
 /*---------------------------------------------------------------------------*/
 /*use nullrdc driver*/
-#define NETSTACK_CONF_RDC nullrdc_driver
+//#define NETSTACK_CONF_RDC nullrdc_driver
 /* For very sleepy operation */
 #define RF_BLE_CONF_ENABLED                   0
 #define UIP_DS6_CONF_PERIOD        CLOCK_SECOND
