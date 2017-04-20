@@ -50,8 +50,8 @@
    by Contiki radio packets. For IEEE 802.15.4 radios, use the
    framer_802154 driver. */
 #ifndef NETSTACK_CONF_FRAMER
-#define NETSTACK_CONF_FRAMER framer_nullmac
-/* #define NETSTACK_CONF_FRAMER framer_802154 */
+/*#define NETSTACK_CONF_FRAMER framer_nullmac*/
+#define NETSTACK_CONF_FRAMER framer_802154
 #endif /* NETSTACK_CONF_FRAMER */
 
 /* NETSTACK_CONF_RDC specifies the Radio Duty Cycling (RDC) layer. The

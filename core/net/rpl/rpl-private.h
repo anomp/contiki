@@ -173,7 +173,7 @@
 #endif /* RPL_CONF_MIN_HOPRANKINC */
 
 #ifndef RPL_CONF_MAX_RANKINC
-#define RPL_MAX_RANKINC             (7 * RPL_MIN_HOPRANKINC)
+#define RPL_MAX_RANKINC             (1 * RPL_MIN_HOPRANKINC)
 #else /* RPL_CONF_MAX_RANKINC */
 #define RPL_MAX_RANKINC             RPL_CONF_MAX_RANKINC
 #endif /* RPL_CONF_MAX_RANKINC */

@@ -51,7 +51,7 @@
 #include "net/rpl/rpl-ns.h"
 #include "net/packetbuf.h"
 
-#define DEBUG DEBUG_NONE
+#define DEBUG DEBUG_PRINT
 #include "net/ip/uip-debug.h"
 
 #include <limits.h>
@@ -584,7 +584,7 @@ insert_hbh_header(const rpl_instance_t *instance)
   uip_ext_len = last_uip_ext_len + RPL_HOP_BY_HOP_LEN;
 
   /* Update header before returning */
-  return update_hbh_header();
+  return 1;
 }
 /*---------------------------------------------------------------------------*/
 void
@@ -645,19 +645,19 @@ rpl_update_header(void)
      * (SRH is inserted only if the destination is in the DODAG) */
     rpl_remove_header();
     if(RPL_IS_NON_STORING(default_instance)) {
-      return insert_srh_header();
+      return 1;
     } else {
-      return insert_hbh_header(default_instance);
+      return 1;
     }
   } else {
     if(uip_ds6_is_my_addr(&UIP_IP_BUF->srcipaddr)
         && UIP_IP_BUF->ttl == uip_ds6_if.cur_hop_limit) {
       /* Insert HBH option at source. Checking the address is not sufficient because
        * in non-storing mode, a packet may go up and then down the same path again */
-      return insert_hbh_header(default_instance);
+      return 1;
     } else {
       /* Update HBH option at forwarders */
-      return update_hbh_header();
+      return 1;
     }
   }
 }
